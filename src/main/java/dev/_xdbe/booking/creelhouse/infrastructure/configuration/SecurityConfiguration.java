@@ -29,6 +29,7 @@ public class SecurityConfiguration {
                 // Step 4a: add access control
                 .requestMatchers("/dashboard").hasRole("ADMIN")
                 .requestMatchers("/").permitAll()
+
                 // Step 4a: end
                 .anyRequest().permitAll()
             )
