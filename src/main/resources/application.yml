@@ -9,3 +9,9 @@ spring:
 server:
   ssl:
     bundle: web
+  servlet:
+    session:
+      cookie:
+        secure: true
+        http-only: true
+        same-site: strict
