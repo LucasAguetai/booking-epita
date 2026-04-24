@@ -1,77 +1,82 @@
-name: pullrequest
+name: Security Check on Pull Request
+
 on:
-  pull_request
+  pull_request:
+    branches: [ "main" ]
 
 permissions:
-  actions: read
-  security-events: write
   contents: read
+  security-events: write
+  actions: read
 
 jobs:
-  dependencies-analysis:
+  DependenciesAnalysis:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: run osv-scanner after PR
-        uses: google/osv-scanner-action/osv-scanner-action@main
+      - name: Run OSV Scanner (After PR)
+        uses: google/osv-scanner-action/osv-scanner-action@v1.9.0
         with:
           scan-args: |-
-            --format sarif
-            --output after.sarif
+            --format json
+            --output osv-after.json
             ./
         continue-on-error: true
 
       - name: checkout baseline commit
-        run: |
-          git checkout ${{ github.event.pull_request.base.sha }}
+        run: git checkout ${{ github.event.pull_request.base.sha }}
 
-      - name: run osv-scanner before PR
-        uses: google/osv-scanner-action/osv-scanner-action@main
+      - name: Run OSV Scanner (Before PR)
+        uses: google/osv-scanner-action/osv-scanner-action@v1.9.0
         with:
           scan-args: |-
-            --format sarif
-            --output before.sarif
+            --format json
+            --output osv-before.json
             ./
         continue-on-error: true
 
-      - name: compare analysis
-        uses: google/osv-scanner-action/osv-reporter-action@main
+      - name: Compare analysis
+        uses: google/osv-scanner-action/osv-reporter-action@v1.9.0
         with:
           scan-args: |-
-            --new before.sarif
-            --old after.sarif
-            --output diff.sarif
-        continue-on-error: true
+            --old=osv-before.json
+            --new=osv-after.json
+            --output=osv-report.json
+            --fail-on-vuln=true
 
-      - name: save report
+      - name: Save differential report as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dependencies-report
-          path: diff.sarif
+          name: dependencies-diff-report
+          path: osv-report.json
 
-  source-code-analysis:
+  SourceCodeAnalysis:
     runs-on: ubuntu-latest
     container:
-      image: returntocorp/semgrep:latest
+      image: returntocorp/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: run semgrep
+      - name: Run differential analysis with semgrep
         run: |
-          semgrep --config .semgrep \
+          semgrep scan \
+            --config=.semgrep \
+            --baseline-commit=${{ github.event.pull_request.base.sha }} \
+            --error \
             --sarif \
-            --output semgrep.sarif \
-            --baseline-commit ${{ github.event.pull_request.base.sha }} \
-            .
-        continue-on-error: true
+            --output=semgrep-diff.sarif
 
-      - name: save report
+      - name: Save differential report as artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: semgrep-report
-          path: semgrep.sarif
+          name: semgrep-diff-report
+          path: semgrep-diff.sarif
+
