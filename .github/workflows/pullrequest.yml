@@ -62,6 +62,7 @@ jobs:
         run: |
           semgrep --config .semgrep \
             --sarif \
+            --error \
             --output semgrep.sarif \
             --baseline-commit ${{ github.event.pull_request.base.sha }} \
             .
