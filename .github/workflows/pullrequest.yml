@@ -22,7 +22,6 @@ jobs:
             --format sarif
             --output after.sarif
             ./
-        continue-on-error: true
 
       - name: checkout baseline commit
         run: |
@@ -35,7 +34,6 @@ jobs:
             --format sarif
             --output before.sarif
             ./
-        continue-on-error: true
 
       - name: compare analysis
         uses: google/osv-scanner-action/osv-reporter-action@main
@@ -44,7 +42,6 @@ jobs:
             --new before.sarif
             --old after.sarif
             --output diff.sarif
-        continue-on-error: true
 
       - name: save report
         uses: actions/upload-artifact@v4
@@ -68,7 +65,6 @@ jobs:
             --output semgrep.sarif \
             --baseline-commit ${{ github.event.pull_request.base.sha }} \
             .
-        continue-on-error: true
 
       - name: save report
         uses: actions/upload-artifact@v4
