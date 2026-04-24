@@ -50,7 +50,7 @@ jobs:
           name: dependencies-report
           path: diff.sarif
 
-source-code-analysis:
+  source-code-analysis:
     runs-on: ubuntu-latest
     container:
       image: returntocorp/semgrep:latest
