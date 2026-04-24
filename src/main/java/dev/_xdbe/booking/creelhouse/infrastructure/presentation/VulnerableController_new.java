@@ -8,15 +8,14 @@ import org.springframework.http.ResponseEntity;
 
 
 @Controller
-public class VulnerableController2 {
-
+public class VulnerableController {
     @GetMapping("/xss")
-	public ResponseEntity<String> getXSS(
+    public ResponseEntity<String> getXSS(
         @RequestParam(defaultValue = "https://http.cat/images/400.jpg") String imageLocation
     ) {
         String htmlString = "<img src=%s width=\"400\" height=\"300\"/>";
         String payload = String.format(
                         htmlString,imageLocation);
-		return new ResponseEntity<>(payload, HttpStatus.OK);
-	}
+        return new ResponseEntity<>(payload, HttpStatus.OK);
+    }
 }
