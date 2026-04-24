@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: run osv-scanner after PR
         uses: google/osv-scanner-action/osv-scanner-action@main
@@ -56,6 +58,8 @@ jobs:
       image: returntocorp/semgrep:latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: run semgrep
         run: |
