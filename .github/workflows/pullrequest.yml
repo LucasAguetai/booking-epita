@@ -1,0 +1,73 @@
+name: pullrequest
+on:
+  pull_request
+
+permissions:
+  actions: read
+  security-events: write
+  contents: read
+
+jobs:
+  dependencies-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: run osv-scanner after PR
+        uses: google/osv-scanner-action/osv-scanner-action@main
+        with:
+          scan-args: |-
+            --format sarif
+            --output after.sarif
+            ./
+        continue-on-error: true
+
+      - name: checkout baseline commit
+        run: |
+          git checkout ${{ github.event.pull_request.base.sha }}
+
+      - name: run osv-scanner before PR
+        uses: google/osv-scanner-action/osv-scanner-action@main
+        with:
+          scan-args: |-
+            --format sarif
+            --output before.sarif
+            ./
+        continue-on-error: true
+
+      - name: compare analysis
+        uses: google/osv-scanner-action/osv-reporter-action@main
+        with:
+          scan-args: |-
+            --new before.sarif
+            --old after.sarif
+            --output diff.sarif
+        continue-on-error: true
+
+      - name: save report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependencies-report
+          path: diff.sarif
+
+source-code-analysis:
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: run semgrep
+        run: |
+          semgrep --config .semgrep \
+            --sarif \
+            --output semgrep.sarif \
+            --baseline-commit ${{ github.event.pull_request.base.sha }} \
+            .
+        continue-on-error: true
+
+      - name: save report
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep.sarif
