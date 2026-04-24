@@ -47,6 +47,7 @@ jobs:
             before.json
             --output-files
             sarif:diff.sarif
+            --fail-on-vuln=true
 
       - name: save report
         uses: actions/upload-artifact@v4
